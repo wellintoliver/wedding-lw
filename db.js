@@ -7,7 +7,7 @@ const pool = new Pool({
     : false,
 });
 
-// ── Inicializa tabelas se não existirem ──────────────────────────
+// ── Inicializa tabelas ───────────────────────────────────────────
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS gifts (
@@ -19,7 +19,8 @@ async function initDB() {
       total       INTEGER NOT NULL,
       quotas      INTEGER NOT NULL,
       vpq         INTEGER NOT NULL,
-      res_quotas  INTEGER DEFAULT 0
+      res_quotas  INTEGER DEFAULT 0,
+      image_url   TEXT
     );
 
     CREATE TABLE IF NOT EXISTS contributors (
@@ -53,7 +54,9 @@ async function initDB() {
     );
   `);
 
-  // Seed presentes se tabela estiver vazia
+  // Migração segura — adiciona image_url se não existir
+  await pool.query(`ALTER TABLE gifts ADD COLUMN IF NOT EXISTS image_url TEXT;`);
+
   const { rows } = await pool.query('SELECT COUNT(*) FROM gifts');
   if (parseInt(rows[0].count) === 0) {
     await seedGifts();
@@ -63,28 +66,27 @@ async function initDB() {
 }
 
 async function seedGifts() {
+  // [id, name, cat, emoji, desc, total, quotas, vpq, image_url]
   const gifts = [
-    [1,  'Geladeira Frost Free 460L',       'casa',        '🧊', 'Duplex inverter 460L, inox escovado, eficiência A+++.',         4000, 100, 40 ],
-    [2,  'Máquina de Lavar 12kg',            'casa',        '🌀', 'Direct Drive, 12 programas, baixo consumo de água.',           2800,  70, 40 ],
-    [3,  'Air Fryer Digital 5,5L',           'cozinha',     '🥘', '12 funções, display touchscreen, capacidade família.',         350,   10, 35 ],
-    [4,  'Jogo de Panelas Premium 5 Peças',  'cozinha',     '🍳', 'Antiaderente cerâmico, livre de PFOA, alças ergonômicas.',     480,   10, 48 ],
-    [5,  'Cafeteira Expresso',               'cozinha',     '☕', '15 bar de pressão, vaporizador de leite, corpo em inox.',      620,   10, 62 ],
-    [6,  'Liquidificador de Alta Potência',  'cozinha',     '🥤', '1500W, copo de vidro 2L, 6 velocidades + pulsar.',             290,   10, 29 ],
-    [7,  'Home Theater 5.1 Surround',        'casa',        '🔊', 'Sistema imersivo com subwoofer ativo e Bluetooth.',            1800,  50, 36 ],
-    [8,  'Jogo de Cama Queen 400 Fios',      'cama-banho',  '🛏️', '100% algodão egípcio, 4 peças, cor lavanda.',                 520,   10, 52 ],
-    [9,  'Jogo de Toalhas 8 Peças',          'cama-banho',  '🛁', 'Algodão penteado 600g/m², super absorvente, cor areia.',       340,   10, 34 ],
-    [10, 'Fundo para a Lua de Mel',          'experiencia', '✈️', 'Contribua para a viagem dos sonhos de Luciana e Wellington!',  8000, 100, 80 ],
-    [11, 'Jantar Romântico a Dois',          'experiencia', '🍽️', 'Voucher para jantar a dois em restaurante italiano premiado.',  400,   10, 40 ],
-    [12, 'Spa Day para o Casal',             'experiencia', '💆', 'Massagem, hidratação e piscina termal para dois.',              580,   10, 58 ],
-    [13, 'Tapete Sala 2×3m',                'casa',        '🏠', 'Fibra natural trançada, estilo escandinavo, tons neutros.',     480,   10, 48 ],
-    [14, 'Kit Aromaterapia',                 'casa',        '🕯️', 'Difusor elétrico + 10 óleos essenciais + 3 velas.',            260,   10, 26 ],
-    [15, 'Curso de Culinária a Dois',        'experiencia', '👨‍🍳', 'Aula hands-on de 3h com chef, inclui jantar ao final.',        320,   10, 32 ],
+    [1,  'Geladeira Frost Free 460L',      'casa',       '🧊', 'Duplex inverter 460L, inox escovado, eficiência A+++.',        4000, 100, 40, 'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=600&q=80'],
+    [2,  'Máquina de Lavar 12kg',          'casa',       '🌀', 'Direct Drive, 12 programas, baixo consumo de água.',          2800,  70, 40, 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=600&q=80'],
+    [3,  'Air Fryer Digital 5,5L',         'cozinha',    '🥘', '12 funções, display touchscreen, capacidade família.',        350,   10, 35, 'https://images.unsplash.com/photo-1648198801169-7e34d5bd8a7f?w=600&q=80'],
+    [4,  'Jogo de Panelas Premium',        'cozinha',    '🍳', 'Antiaderente cerâmico, livre de PFOA, alças ergonômicas.',    480,   10, 48, 'https://images.unsplash.com/photo-1584990347449-a3d6e99a5c09?w=600&q=80'],
+    [5,  'Cafeteira Expresso',             'cozinha',    '☕', '15 bar de pressão, vaporizador de leite, corpo em inox.',     620,   10, 62, 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=600&q=80'],
+    [6,  'Liquidificador Alta Potência',   'cozinha',    '🥤', '1500W, copo de vidro 2L, 6 velocidades + pulsar.',            290,   10, 29, 'https://images.unsplash.com/photo-1619067419177-9a5a0f37f376?w=600&q=80'],
+    [7,  'Home Theater 5.1 Surround',      'casa',       '🔊', 'Sistema imersivo com subwoofer ativo e Bluetooth.',           1800,  50, 36, 'https://images.unsplash.com/photo-1545454675-3531b543be5d?w=600&q=80'],
+    [8,  'Jogo de Cama Queen 400 Fios',    'cama-banho', '🛏️','100% algodão egípcio, 4 peças, cor lavanda.',                 520,   10, 52, 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&q=80'],
+    [9,  'Jogo de Toalhas 8 Peças',        'cama-banho', '🛁', 'Algodão penteado 600g/m², super absorvente, cor areia.',      340,   10, 34, 'https://images.unsplash.com/photo-1611048267451-e6ed903d4a38?w=600&q=80'],
+    [10, 'Fundo para a Lua de Mel',        'experiencia','✈️', 'Contribua para a viagem dos sonhos de Luciana e Wellington!', 8000, 100, 80, 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=80'],
+    [11, 'Jantar Romântico a Dois',        'experiencia','🍽️','Voucher para jantar a dois em restaurante italiano premiado.',  400,  10, 40, 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80'],
+    [12, 'Spa Day para o Casal',           'experiencia','💆', 'Massagem, hidratação e piscina termal para dois.',             580,  10, 58, 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&q=80'],
+    [13, 'Tapete Sala 2×3m',              'casa',       '🏠', 'Fibra natural trançada, estilo escandinavo, tons neutros.',    480,  10, 48, 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80'],
   ];
 
   for (const g of gifts) {
     await pool.query(
-      `INSERT INTO gifts (id, name, cat, emoji, description, total, quotas, vpq)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO NOTHING`,
+      `INSERT INTO gifts (id, name, cat, emoji, description, total, quotas, vpq, image_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (id) DO NOTHING`,
       g
     );
   }
@@ -106,6 +108,7 @@ async function getGifts() {
     id: r.id, name: r.name, cat: r.cat, emoji: r.emoji,
     desc: r.description, total: r.total, quotas: r.quotas,
     vpq: r.vpq, resQuotas: r.res_quotas, contributors: r.contributors,
+    imageUrl: r.image_url,
   }));
 }
 
@@ -151,34 +154,24 @@ async function confirmPayment(externalRef, message) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-
     const { rows } = await client.query(
       `SELECT * FROM payments WHERE external_ref=$1 AND status='pending'`,
       [externalRef]
     );
     if (!rows[0]) { await client.query('ROLLBACK'); return false; }
-
     const p = rows[0];
-
-    // Atualiza pagamento
     await client.query(
       `UPDATE payments SET status='approved', confirmed_at=NOW() WHERE external_ref=$1`,
       [externalRef]
     );
-
-    // Atualiza cotas do presente
     await client.query(
       `UPDATE gifts SET res_quotas = res_quotas + $1 WHERE id=$2`,
       [p.qty, p.gift_id]
     );
-
-    // Registra contributor
     await client.query(
       `INSERT INTO contributors (gift_id, name, qty) VALUES ($1,$2,$3)`,
       [p.gift_id, p.payer_name, p.qty]
     );
-
-    // Salva mensagem se existir
     if (message?.trim()) {
       const { rows: gRows } = await client.query(
         `SELECT name FROM gifts WHERE id=$1`, [p.gift_id]
@@ -188,7 +181,6 @@ async function confirmPayment(externalRef, message) {
         [p.payer_name, message.trim(), gRows[0]?.name || null]
       );
     }
-
     await client.query('COMMIT');
     return true;
   } catch (err) {
