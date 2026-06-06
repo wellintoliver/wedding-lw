@@ -558,15 +558,21 @@ async function manualConfirm() {
 // ── FINISH ────────────────────────────────────────────────────────
 async function finish(withMsg) {
   const text = withMsg ? document.getElementById('gift-msg').value.trim() : '';
+  const g    = gifts.find(x => x.id === curId);
+
   if (text) {
     try {
-      await api('/api/payment/confirm', { method:'POST', body: JSON.stringify({ externalRef: curExtRef, message: text }) });
-      await Promise.all([loadGifts(), loadMsgs()]);
+      // Mensagem vai direto para /api/messages — pagamento já confirmado antes
+      await api('/api/messages', {
+        method: 'POST',
+        body: JSON.stringify({ name: curName, text, giftName: g?.name || null })
+      });
+      await loadMsgs();
     } catch { /* falha silenciosa */ }
   }
-  const g = gifts.find(x => x.id === curId);
+
   document.getElementById('done-txt').textContent = text
-    ? `Obrigado, ${curName}! Sua contribuição e mensagem foram registradas. Luciana e Wellington ficarão muito felizes! 💜`
+    ? `Obrigado, ${curName}! Sua mensagem foi registrada. Luciana e Wellington ficarão muito felizes! 💜`
     : `Obrigado, ${curName}! Sua contribuição para "${g?.name}" foi confirmada. 💜`;
   goStep('s-done');
 }

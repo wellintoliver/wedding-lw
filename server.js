@@ -37,11 +37,11 @@ app.get('/api/messages', async (req, res) => {
 });
 
 app.post('/api/messages', async (req, res) => {
-  const { name, text } = req.body;
+  const { name, text, giftName } = req.body;
   if (!name?.trim() || !text?.trim())
     return res.status(400).json({ error: 'name e text são obrigatórios' });
   try {
-    await db.addMessage({ name: name.trim(), text: text.trim() });
+    await db.addMessage({ name: name.trim(), text: text.trim(), giftName: giftName || null });
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'Erro ao salvar mensagem' });

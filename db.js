@@ -200,9 +200,9 @@ async function confirmPayment(externalRef, message) {
   }
 }
 
-async function addMessage({ name, text }) {
+async function addMessage({ name, text, giftName = null }) {
   await pool.query(
-    `INSERT INTO messages (name, text) VALUES ($1,$2)`, [name, text]
+    `INSERT INTO messages (name, text, gift_name) VALUES ($1,$2,$3)`, [name, text, giftName]
   );
 }
 
