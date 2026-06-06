@@ -297,29 +297,33 @@
       <div class="fg"><label>E-mail <span style="font-weight:300;text-transform:none;letter-spacing:0;font-style:italic">(para recibo — opcional)</span></label><input type="email" id="r-email" placeholder="seu@email.com"/></div>
       <div class="step-btns">
         <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-        <button class="btn btn-primary" id="btn-gerar" onclick="goPix()">Gerar Pix →</button>
+        <button class="btn btn-primary" id="btn-gerar" onclick="goCheckout()">Ir para pagamento →</button>
       </div>
     </div>
 
-    <!-- S2: PIX -->
+    <!-- S2: CHECKOUT -->
     <div class="step" id="s-pix">
       <div class="pix-center">
-        <p class="eyebrow">Pagamento via Pix</p>
+        <p class="eyebrow">Pagamento</p>
         <h2 class="m-title">Quase lá!</h2>
-        <p class="m-sub">Escaneie o QR code ou copie o código para pagar.</p>
+        <p class="m-sub">Clique no botão abaixo para pagar com Pix, cartão de crédito ou boleto pelo Mercado Pago.</p>
         <div class="pix-amount" id="p-amount">R$ 0,00</div>
         <p class="pix-cotas" id="p-cotas">—</p>
-        <div id="qr-box"><span style="color:var(--text-lt);font-size:.82rem">Carregando QR...</span></div>
-        <div class="pix-copy">
-          <span class="pc-lbl">Pix copia e cola</span>
-          <div class="pc-val" id="pix-code">—</div>
-          <button class="btn btn-outline copy-btn" onclick="copyCode()">📋 Copiar código</button>
+        <div style="margin:1.5rem 0">
+          <a id="checkout-btn" href="#" target="_blank" class="btn btn-primary" style="font-size:.85rem;padding:.9rem 2rem;display:inline-block">
+            💳 Pagar com Mercado Pago
+          </a>
+        </div>
+        <div style="display:flex;gap:1rem;justify-content:center;margin-bottom:1.5rem;font-size:.75rem;color:var(--text-lt)">
+          <span>💳 Cartão de crédito</span>
+          <span>⚡ Pix</span>
+          <span>📄 Boleto</span>
         </div>
         <div class="poll-row">
           <div class="poll-dot pending" id="poll-dot"></div>
-          <span id="poll-label">Aguardando pagamento...</span>
+          <span id="poll-label">Aguardando confirmação do pagamento...</span>
         </div>
-        <p class="pix-note">O pagamento é detectado automaticamente após o Pix. Se preferir, confirme manualmente com o botão abaixo.</p>
+        <p class="pix-note">O pagamento abre em uma nova aba. Após concluir, a página detecta automaticamente. Se não detectar, clique em "Já paguei!".</p>
         <div class="step-btns">
           <button class="btn btn-ghost" onclick="goStep('s-quota')">← Voltar</button>
           <button class="btn btn-green" onclick="manualConfirm()">Já paguei! ✓</button>
@@ -469,11 +473,12 @@ function syncSlider() {
   document.getElementById('qs-gtotal').textContent= fmt(g.total);
 }
 
-// ── GERAR PIX ─────────────────────────────────────────────────────
-async function goPix() {
+// ── GERAR CHECKOUT PRO ───────────────────────────────────────────
+async function goCheckout() {
   const name  = document.getElementById('r-name').value.trim();
   const email = document.getElementById('r-email').value.trim();
-  if (!name) { toast('Por favor, informe seu nome.'); return; }
+  if (!name)  { toast('Por favor, informe seu nome.'); return; }
+  if (!email) { toast('Por favor, informe seu e-mail para o recibo.'); return; }
   curName = name;
   curQty  = parseInt(document.getElementById('q-slider').value);
 
@@ -485,7 +490,7 @@ async function goPix() {
       method: 'POST',
       body: JSON.stringify({ giftId: curId, qty: curQty, name, email })
     });
-    btn.innerHTML = 'Gerar Pix →'; btn.disabled = false;
+    btn.innerHTML = 'Ir para pagamento →'; btn.disabled = false;
 
     if (data.error) { toast(data.error); return; }
 
@@ -495,18 +500,19 @@ async function goPix() {
     document.getElementById('p-amount').textContent = fmt(data.amount);
     document.getElementById('p-cotas').textContent  = `${curQty} cota${curQty > 1 ? 's' : ''} · ${g.name}`;
 
-    // QR Code
-    const qrEl = document.getElementById('qr-box');
-    if (data.qrCodeBase64) {
-      qrEl.innerHTML = `<img src="data:image/png;base64,${data.qrCodeBase64}" alt="QR Code Pix"/>`;
+    // Botão de checkout
+    const checkoutBtn = document.getElementById('checkout-btn');
+    if (data.checkoutUrl) {
+      checkoutBtn.href = data.checkoutUrl;
+      checkoutBtn.style.opacity = '1';
+      checkoutBtn.style.pointerEvents = 'auto';
     } else {
-      qrEl.innerHTML = `<div style="padding:1rem;background:var(--lav-pale);font-size:.78rem;color:var(--text-lt);text-align:center;width:190px;border-radius:2px">Configure o token do<br>Mercado Pago para<br>gerar o QR Code real</div>`;
+      checkoutBtn.href = '#';
+      checkoutBtn.textContent = '⚠️ Configure o token do MP';
+      checkoutBtn.style.opacity = '0.5';
     }
 
-    // Código copia e cola
-    document.getElementById('pix-code').textContent = data.qrCode || '— Token do Mercado Pago não configurado —';
-
-    // Reset poll UI
+    // Poll UI
     document.getElementById('poll-dot').className = 'poll-dot pending';
     document.getElementById('poll-label').textContent = data.demo
       ? 'Modo demo — clique em "Já paguei!" para continuar'
@@ -516,16 +522,9 @@ async function goPix() {
     if (!data.demo) startPoll();
 
   } catch {
-    btn.innerHTML = 'Gerar Pix →'; btn.disabled = false;
-    toast('Erro ao gerar Pix. Tente novamente.');
+    btn.innerHTML = 'Ir para pagamento →'; btn.disabled = false;
+    toast('Erro ao gerar pagamento. Tente novamente.');
   }
-}
-
-function copyCode() {
-  const val = document.getElementById('pix-code').textContent;
-  navigator.clipboard.writeText(val)
-    .then(() => toast('Código copiado! ✓'))
-    .catch(() => toast('Selecione e copie o código manualmente.'));
 }
 
 // ── POLLING ───────────────────────────────────────────────────────

@@ -48,14 +48,14 @@ app.post('/api/messages', async (req, res) => {
   }
 });
 
-// ── API: Criar pagamento Pix ─────────────────────────────────────
+// ── API: Criar preferência Checkout Pro ─────────────────────────
 app.post('/api/payment/create', async (req, res) => {
   const { giftId, qty, name, email } = req.body;
   if (!giftId || !qty || !name)
     return res.status(400).json({ error: 'giftId, qty e name são obrigatórios' });
 
-  const gifts   = await db.getGifts();
-  const gift    = gifts.find(g => g.id === giftId);
+  const gifts = await db.getGifts();
+  const gift  = gifts.find(g => g.id === giftId);
   if (!gift) return res.status(404).json({ error: 'Presente não encontrado' });
 
   const avail = gift.quotas - gift.resQuotas;
@@ -68,40 +68,69 @@ app.post('/api/payment/create', async (req, res) => {
   // Salva pagamento pendente no banco
   await db.createPayment({ externalRef, giftId, qty, amount, payerName: name.trim(), payerEmail });
 
-  // Se não tiver token configurado, retorna modo demo
+  // Modo demo sem token
   if (!process.env.MP_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN === 'SEU_TOKEN_AQUI') {
-    return res.json({ externalRef, amount, qrCode: null, qrCodeBase64: null, paymentId: 'DEMO', demo: true });
+    return res.json({ externalRef, amount, checkoutUrl: null, demo: true });
   }
 
   try {
-    const response = await mp.payment.create({
-      transaction_amount: amount,
-      description:        `${qty} cota(s) — ${gift.name} | Casamento L&W`,
-      payment_method_id:  'pix',
-      external_reference: externalRef,
+    const appUrl = process.env.APP_URL;
+
+    const preference = await mp.preferences.create({
+      items: [{
+        title:      `${qty} cota(s) — ${gift.name}`,
+        description:`Casamento Luciana & Wellington · ${qty} cota${qty > 1 ? 's' : ''} de ${gift.name}`,
+        quantity:   1,
+        currency_id:'BRL',
+        unit_price: amount,
+      }],
       payer: {
-        email:      payerEmail,
-        first_name: name.trim().split(' ')[0],
-        last_name:  name.trim().split(' ').slice(1).join(' ') || 'Convidado',
+        name:    name.trim().split(' ')[0],
+        surname: name.trim().split(' ').slice(1).join(' ') || 'Convidado',
+        email:   payerEmail,
       },
-      notification_url: `${process.env.APP_URL}/api/payment/webhook`,
+      payment_methods: {
+        // Aceita todos os métodos: cartão, Pix, boleto
+        excluded_payment_types: [],
+        installments: 12, // permite até 12x no cartão
+      },
+      back_urls: {
+        success: `${appUrl}/sucesso.html?ref=${externalRef}`,
+        failure: `${appUrl}/`,
+        pending: `${appUrl}/pendente.html?ref=${externalRef}`,
+      },
+      auto_return:        'approved',
+      external_reference: externalRef,
+      notification_url:   `${appUrl}/api/payment/webhook`,
+      statement_descriptor: 'CASAMENTO LW',
     });
 
-    const p = response.body;
-    await db.updatePaymentMpId(externalRef, String(p.id));
+    const pref = preference.body;
+    await db.updatePaymentMpId(externalRef, pref.id);
 
     res.json({
       externalRef,
-      paymentId:    p.id,
       amount,
-      qrCode:       p.point_of_interaction?.transaction_data?.qr_code,
-      qrCodeBase64: p.point_of_interaction?.transaction_data?.qr_code_base64,
-      demo:         false,
+      // sandbox_init_point para testes, init_point para produção
+      checkoutUrl: process.env.MP_ACCESS_TOKEN.startsWith('TEST')
+        ? pref.sandbox_init_point
+        : pref.init_point,
+      demo: false,
     });
   } catch (err) {
-    console.error('MP create error:', err?.message || err);
-    res.status(500).json({ error: 'Erro ao gerar Pix no Mercado Pago' });
+    console.error('MP checkout error:', err?.message || err);
+    res.status(500).json({ error: 'Erro ao criar checkout no Mercado Pago' });
   }
+});
+
+// ── API: Retorno após pagamento (back_url success) ───────────────
+// O MP redireciona o convidado para cá após pagar com cartão
+app.get('/api/payment/return', async (req, res) => {
+  const { external_reference, status } = req.query;
+  if (status === 'approved' && external_reference) {
+    await db.confirmPayment(external_reference, null).catch(() => {});
+  }
+  res.redirect('/');
 });
 
 // ── API: Webhook Mercado Pago ────────────────────────────────────

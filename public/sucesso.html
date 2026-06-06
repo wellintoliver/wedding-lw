@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pagamento confirmado — Luciana & Wellington</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root { --lav-pale:#f5f3fb; --lav-mid:#7b62bc; --lav-dark:#4e3a85; --gold:#b8a06a; --text:#2d2540; --text-lt:#7a6e9a; --white:#ffffff; }
+    body { font-family:'Jost',sans-serif; background:var(--lav-pale); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem; }
+    .card { background:var(--white); border-radius:2px; max-width:480px; width:100%; padding:3rem 2.5rem; text-align:center; box-shadow:0 8px 40px rgba(78,58,133,.08); }
+    .emoji { font-size:4rem; margin-bottom:1.5rem; }
+    h1 { font-family:'Cormorant Garamond',serif; font-size:2.5rem; font-weight:300; margin-bottom:.6rem; color:var(--text); }
+    p { font-size:.92rem; color:var(--text-lt); line-height:1.8; margin-bottom:1.5rem; }
+    .divider { display:flex; align-items:center; gap:1rem; justify-content:center; margin:1.5rem 0; }
+    .divider::before,.divider::after { content:''; height:1px; width:60px; background:linear-gradient(to right,transparent,var(--gold)); }
+    .divider::after { background:linear-gradient(to left,transparent,var(--gold)); }
+    .divider svg { width:16px; height:16px; fill:var(--gold); }
+    .btn { display:inline-block; padding:.75rem 2rem; background:var(--lav-mid); color:var(--white); font-family:'Jost',sans-serif; font-size:.78rem; letter-spacing:.15em; text-transform:uppercase; text-decoration:none; border-radius:1px; transition:background .2s; }
+    .btn:hover { background:var(--lav-dark); }
+    .msg-form { margin-top:2rem; text-align:left; }
+    .msg-form label { display:block; font-size:.72rem; letter-spacing:.15em; text-transform:uppercase; color:var(--text-lt); margin-bottom:.4rem; }
+    .msg-form textarea { width:100%; border:1px solid #ddd5f3; border-radius:1px; padding:.7rem 1rem; font-family:'Jost',sans-serif; font-size:.9rem; color:var(--text); background:var(--lav-pale); outline:none; resize:vertical; min-height:90px; margin-bottom:.8rem; }
+    .msg-form textarea:focus { border-color:var(--lav-mid); }
+    .sent { color:#3a7d44; font-size:.85rem; text-align:center; margin-top:.5rem; display:none; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="emoji">🎉</div>
+  <h1>Pagamento confirmado!</h1>
+  <div class="divider"><svg viewBox="0 0 24 24"><path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/></svg></div>
+  <p>Obrigado pelo carinho! Sua contribuição foi registrada e Luciana & Wellington ficarão muito felizes com este presente. 💜</p>
+
+  <div class="msg-form">
+    <label>Deixe uma mensagem para os noivos <span style="font-weight:300;text-transform:none;letter-spacing:0;font-style:italic">(opcional)</span></label>
+    <textarea id="msg" placeholder="Escreva algo especial... ✨"></textarea>
+    <button class="btn" style="width:100%" onclick="sendMsg()">Enviar mensagem 💌</button>
+    <p class="sent" id="sent">Mensagem enviada com carinho! 💜</p>
+  </div>
+
+  <div style="margin-top:1.5rem">
+    <a href="/" class="btn" style="background:transparent;border:1px solid #b8a06a;color:#4e3a85">← Voltar à lista</a>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const ref    = params.get('ref');
+
+  async function sendMsg() {
+    const text = document.getElementById('msg').value.trim();
+    if (!text) return;
+    try {
+      await fetch('/api/payment/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ externalRef: ref, message: text })
+      });
+      document.getElementById('msg').value = '';
+      document.getElementById('sent').style.display = 'block';
+    } catch { alert('Erro ao enviar. Tente novamente.'); }
+  }
+</script>
+</body>
+</html>
