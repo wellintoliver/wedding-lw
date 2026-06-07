@@ -68,19 +68,19 @@ async function initDB() {
 async function seedGifts() {
   // [id, name, cat, emoji, desc, total, quotas, vpq, image_url]
   const gifts = [
-    [1,  'Geladeira Frost Free 460L',      'casa',       '🧊', 'Duplex inverter 460L, inox escovado, eficiência A+++.',        4000, 100, 40, 'https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=600&q=80'],
+    [1,  'Geladeira Frost Free 460L',      'casa',       '🧊', 'Duplex inverter 460L, inox escovado, eficiência A+++.',        4000, 100, 40, 'https://images.unsplash.com/ZkWMfHPNWpw?w=600&q=80'],
     [2,  'Máquina de Lavar 12kg',          'casa',       '🌀', 'Direct Drive, 12 programas, baixo consumo de água.',          2800,  70, 40, 'https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=600&q=80'],
-    [3,  'Air Fryer Digital 5,5L',         'cozinha',    '🥘', '12 funções, display touchscreen, capacidade família.',        350,   10, 35, 'https://images.unsplash.com/photo-1585664811087-47f65abbad64?w=600&q=80'],
-    [4,  'Jogo de Panelas Premium',        'cozinha',    '🍳', 'Antiaderente cerâmico, livre de PFOA, alças ergonômicas.',    480,   10, 48, 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80'],
+    [3,  'Air Fryer Digital 5,5L',         'cozinha',    '🥘', '12 funções, display touchscreen, capacidade família.',        350,   10, 35, 'https://images.unsplash.com/W58wpd8mbMU?w=600&q=80'],
+    [4,  'Jogo de Panelas Premium',        'cozinha',    '🍳', 'Antiaderente cerâmico, livre de PFOA, alças ergonômicas.',    480,   10, 48, 'https://images.unsplash.com/PkkLkjJdUZw?w=600&q=80'],
     [5,  'Cafeteira Expresso',             'cozinha',    '☕', '15 bar de pressão, vaporizador de leite, corpo em inox.',     620,   10, 62, 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=600&q=80'],
-    [6,  'Liquidificador Alta Potência',   'cozinha',    '🥤', '1500W, copo de vidro 2L, 6 velocidades + pulsar.',            290,   10, 29, 'https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=600&q=80'],
+    [6,  'Liquidificador Alta Potência',   'cozinha',    '🥤', '1500W, copo de vidro 2L, 6 velocidades + pulsar.',            290,   10, 29, 'https://images.unsplash.com/e-tu5Wzl7fMi8?w=600&q=80'],
     [7,  'Home Theater 5.1 Surround',      'casa',       '🔊', 'Sistema imersivo com subwoofer ativo e Bluetooth.',           1800,  50, 36, 'https://images.unsplash.com/photo-1545454675-3531b543be5d?w=600&q=80'],
     [8,  'Jogo de Cama Queen 400 Fios',    'cama-banho', '🛏️','100% algodão egípcio, 4 peças, cor lavanda.',                 520,   10, 52, 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&q=80'],
-    [9,  'Jogo de Toalhas 8 Peças',        'cama-banho', '🛁', 'Algodão penteado 600g/m², super absorvente, cor areia.',      340,   10, 34, 'https://images.unsplash.com/photo-1600369671236-e74521d4b6ad?w=600&q=80'],
+    [9,  'Jogo de Toalhas 8 Peças',        'cama-banho', '🛁', 'Algodão penteado 600g/m², super absorvente, cor areia.',      340,   10, 34, 'https://images.unsplash.com/OPFLRprH4DM?w=600&q=80'],
     [10, 'Fundo para a Lua de Mel',        'experiencia','✈️', 'Contribua para a viagem dos sonhos de Luciana e Wellington!', 8000, 100, 80, 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=80'],
     [11, 'Jantar Romântico a Dois',        'experiencia','🍽️','Voucher para jantar a dois em restaurante italiano premiado.',  400,  10, 40, 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80'],
     [12, 'Spa Day para o Casal',           'experiencia','💆', 'Massagem, hidratação e piscina termal para dois.',             580,  10, 58, 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&q=80'],
-    [13, 'Tapete Sala 2×3m',              'casa',       '🏠', 'Fibra natural trançada, estilo escandinavo, tons neutros.',    480,  10, 48, 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&q=80'],
+    [13, 'Tapete Sala 2×3m',              'casa',       '🏠', 'Fibra natural trançada, estilo escandinavo, tons neutros.',    480,  10, 48, 'https://images.unsplash.com/Vra_DPrrBlE?w=600&q=80'],
   ];
 
   for (const g of gifts) {
